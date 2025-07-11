@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sistema-inventario"
+version = "1.0.0"
+description = "Sistema de gestión de inventario con interfaz gráfica"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Tu Nombre", email = "tu.email@ejemplo.com"}
+]
+maintainers = [
+    {name = "Tu Nombre", email = "tu.email@ejemplo.com"}
+]
+keywords = ["inventario", "gestión", "tkinter", "sqlite", "pandas"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Office/Business :: Financial :: Accounting",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "pandas>=1.5.0",
+    "matplotlib>=3.5.0",
+    "Pillow>=9.0.0",
+    "xlsxwriter>=3.0.0",
+]
+
+[project.scripts]
+sistema-inventario = "main:main"
+
+[project.urls]
+Homepage = "https://github.com/tu-usuario/sistema-inventario"
+Documentation = "https://github.com/tu-usuario/sistema-inventario#readme"
+Repository = "https://github.com/tu-usuario/sistema-inventario"
+"Bug Tracker" = "https://github.com/tu-usuario/sistema-inventario/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+"*" = ["assets/*.png", "*.db"]
+
+[tool.setuptools.include-package-data]
+true = true 

@@ -1,0 +1,19 @@
+# Dependencias para desarrollo
+pandas>=1.5.0
+matplotlib>=3.5.0
+Pillow>=9.0.0
+xlsxwriter>=3.0.0
+
+# Herramientas de desarrollo
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=1.0.0
+
+# Herramientas de empaquetado
+setuptools>=65.0.0
+wheel>=0.38.0
+build>=0.10.0
+
+# Herramientas para crear ejecutables
+pyinstaller>=5.0.0 
