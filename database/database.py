@@ -20,7 +20,8 @@ def initialize_database():
         descripcion TEXT,
         cantidad_stock INTEGER,
         unidad_medida TEXT,
-        precio_venta REAL
+        precio_venta REAL,
+        costo_produccion REAL
     );
     """)
 
@@ -118,6 +119,16 @@ def initialize_database():
         columns = [col[1] for col in cursor.fetchall()]
         if 'valor_total' not in columns:
             cursor.execute("ALTER TABLE pedidos ADD COLUMN valor_total REAL;")
+    except sqlite3.OperationalError:
+        # La tabla no existe, no hay problema
+        pass
+
+    # Verificar si la columna costo_produccion existe en productos_terminados
+    try:
+        cursor.execute("PRAGMA table_info(productos_terminados)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'costo_produccion' not in columns:
+            cursor.execute("ALTER TABLE productos_terminados ADD COLUMN costo_produccion REAL;")
     except sqlite3.OperationalError:
         # La tabla no existe, no hay problema
         pass

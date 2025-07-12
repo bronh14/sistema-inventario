@@ -13,7 +13,12 @@ def create_order_with_products(cliente, estado, fecha, productos):
     valor_total = 0
     for prod_id, cantidad in productos:
         prod = read_product(prod_id)
-        precio_venta = prod[6] if prod and prod[6] is not None else 0
+        if prod and len(prod) > 5:
+            # precio_venta está en el índice 5 (6to campo)
+            precio_venta = prod[5] if prod[5] is not None else 0
+        else:
+            # Si el producto no existe o no tiene precio, usar 0
+            precio_venta = 0
         valor_total += precio_venta * cantidad
     cur.execute("INSERT INTO pedidos (cliente, estado, fecha, valor_total) VALUES (?, ?, ?, ?)", (cliente, estado, fecha, valor_total))
     pedido_id = cur.lastrowid
@@ -61,7 +66,12 @@ def update_order(order_id, updated_order, productos=None):
         valor_total = 0
         for prod_id, cantidad in productos:
             prod = read_product(prod_id)
-            precio_venta = prod[6] if prod and prod[6] is not None else 0
+            if prod and len(prod) > 5:
+                # precio_venta está en el índice 5 (6to campo)
+                precio_venta = prod[5] if prod[5] is not None else 0
+            else:
+                # Si el producto no existe o no tiene precio, usar 0
+                precio_venta = 0
             valor_total += precio_venta * cantidad
         cur.execute("UPDATE pedidos SET cliente=?, estado=?, fecha=?, valor_total=? WHERE id=?", (*updated_order, valor_total, order_id))
     else:
