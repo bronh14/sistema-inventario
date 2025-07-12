@@ -131,7 +131,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 Para soporte técnico o reportar bugs:
 
-- Email: soporte@ejemplo.com
+- Email: byronaguilarbaag@gmail.com
 - GitHub Issues: [Reportar un problema](https://github.com/Bronh14/sistema-inventario/issues)
 
 ---
