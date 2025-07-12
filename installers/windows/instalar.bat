@@ -7,7 +7,7 @@ echo.
 
 :: Descargar el instalador completo desde GitHub
 echo Descargando instalador completo...
-powershell -Command "& {Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Bronh14/sistema-inventario/main/instalar_sistema_inventario.bat' -OutFile '%TEMP%\instalar_completo.bat'}"
+powershell -Command "& {Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Bronh14/sistema-inventario/main/installers/windows/instalar_sistema_inventario.bat' -OutFile '%TEMP%\instalar_completo.bat'}"
 
 if exist "%TEMP%\instalar_completo.bat" (
     echo Instalador descargado. Ejecutando...

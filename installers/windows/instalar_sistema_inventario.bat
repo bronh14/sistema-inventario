@@ -165,7 +165,7 @@ if errorlevel 1 (
     echo Descargando archivos principales...
     powershell -Command "& {Invoke-WebRequest -Uri '%GITHUB_RAW%/main.py' -OutFile '%INSTALL_DIR%\main.py'}"
     powershell -Command "& {Invoke-WebRequest -Uri '%GITHUB_RAW%/requirements.txt' -OutFile '%INSTALL_DIR%\requirements.txt'}"
-    powershell -Command "& {Invoke-WebRequest -Uri '%GITHUB_RAW%/install.bat' -OutFile '%INSTALL_DIR%\install.bat'}"
+    powershell -Command "& {Invoke-WebRequest -Uri '%GITHUB_RAW%/installers/windows/install.bat' -OutFile '%INSTALL_DIR%\install.bat'}"
     
     if not exist "%INSTALL_DIR%\main.py" (
         echo ERROR: No se pudo descargar el proyecto
@@ -183,9 +183,9 @@ echo Proyecto descargado exitosamente en: %INSTALL_DIR%
 echo.
 
 :: Ejecutar instalador del proyecto
-if exist "install.bat" (
+if exist "installers\windows\install.bat" (
     echo Ejecutando instalador del proyecto...
-    call install.bat
+    call installers\windows\install.bat
 ) else (
     echo Instalador no encontrado. Instalando dependencias manualmente...
     

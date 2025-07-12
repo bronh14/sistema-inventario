@@ -12,12 +12,6 @@ def initialize_database():
     # Habilitar claves foráneas
     cursor.execute("PRAGMA foreign_keys = ON;")
 
-    # Verificar si la columna valor_total existe en pedidos
-    cursor.execute("PRAGMA table_info(pedidos)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if 'valor_total' not in columns:
-        cursor.execute("ALTER TABLE pedidos ADD COLUMN valor_total REAL;")
-
     # Tabla productos_terminados
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS productos_terminados (
@@ -83,16 +77,19 @@ def initialize_database():
         FOREIGN KEY (id_material) REFERENCES materiales(id_material)
     );
     """)
-    #Tabla pedidos (sin producto_id ni cantidad)
+
+    # Tabla pedidos
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS pedidos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         cliente TEXT,
         estado TEXT,
-        fecha TEXT)
-    """);
+        fecha TEXT,
+        valor_total REAL
+    );
+    """)
     
-    #Nueva tabla detalle_pedido
+    # Tabla detalle_pedido
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS detalle_pedido (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,8 +97,9 @@ def initialize_database():
         producto_id INTEGER,
         cantidad REAL,
         FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
-        FOREIGN KEY (producto_id) REFERENCES productos_terminados(id_producto))
-    """);
+        FOREIGN KEY (producto_id) REFERENCES productos_terminados(id_producto)
+    );
+    """)
 
     # Tabla balance_ventas
     cursor.execute("""
@@ -112,6 +110,17 @@ def initialize_database():
         pedido_id INTEGER
     );
     """)
+
+    # Verificar y agregar columnas faltantes en tablas existentes
+    try:
+        # Verificar si la columna valor_total existe en pedidos (para tablas existentes)
+        cursor.execute("PRAGMA table_info(pedidos)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'valor_total' not in columns:
+            cursor.execute("ALTER TABLE pedidos ADD COLUMN valor_total REAL;")
+    except sqlite3.OperationalError:
+        # La tabla no existe, no hay problema
+        pass
 
     # Confirmar los cambios y cerrar la conexión
     conn.commit()
