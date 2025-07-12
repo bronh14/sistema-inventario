@@ -7,7 +7,7 @@ def create_connection(db_file="inventory_system.db"):
         conn = sqlite3.connect(db_file)
         return conn
     except sqlite3.Error as e:
-        print(e)
+        pass
     return conn
 
 def execute_query(conn, query, params=None):
@@ -20,7 +20,7 @@ def execute_query(conn, query, params=None):
             cursor.execute(query)
         conn.commit()
     except sqlite3.Error as e:
-        print(e)
+        pass
 
 def close_connection(conn):
     """Cierra la conexión a la base de datos."""

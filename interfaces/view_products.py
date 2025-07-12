@@ -53,7 +53,15 @@ def show_products_view(gui):
     style.configure("Treeview.Heading", background=TABLA_HEADER, foreground=TEXTO, font=("Segoe UI", 12, "bold"), borderwidth=0)
     style.map("Treeview", background=[("selected", TABLA_FILA_ALTERNA)], foreground=[("selected", BOTON_PRINCIPAL)])
     columns = ("ID", "Nombre", "Descripción", "Cantidad", "Unidad", "Costo Producción", "Precio Venta", "Alerta")
-    gui.products_table = ttk.Treeview(card, columns=columns, show="headings")
+    frame_tabla = Frame(card, bg=TABLA_FILA)
+    frame_tabla.pack(fill="both", expand=True, padx=24, pady=10)
+    gui.products_table = ttk.Treeview(frame_tabla, columns=columns, show="headings")
+    vsb = tk.Scrollbar(frame_tabla, orient="vertical", command=gui.products_table.yview)
+    hsb = tk.Scrollbar(frame_tabla, orient="horizontal", command=gui.products_table.xview)
+    gui.products_table.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+    gui.products_table.pack(side="left", fill="both", expand=True)
+    vsb.pack(side="right", fill="y")
+    hsb.pack(side="bottom", fill="x")
     gui._products_sort_state = {col: False for col in columns}  # False: asc, True: desc
     def sort_products_table(col):
         data = [(gui.products_table.set(k, col), k) for k in gui.products_table.get_children("")]
@@ -70,7 +78,6 @@ def show_products_view(gui):
     for col in columns:
         gui.products_table.heading(col, text=col, command=lambda c=col: sort_products_table(c))
         gui.products_table.column(col, anchor="center")
-    gui.products_table.pack(fill="both", expand=True, padx=24, pady=10)
     view_products(gui)
 
 def view_products(gui):
@@ -150,7 +157,6 @@ def add_product_form(gui):
         cantidad = cantidad_entry.get()
         unidad = unidad_entry.get()
         precio = precio_entry.get().replace('$','').replace(',','').strip()
-        print(f"[DEBUG] Guardar producto: nombre={nombre}, descripcion={descripcion}, cantidad={cantidad}, unidad={unidad}, precio={precio}")
         if not (nombre and cantidad and unidad and precio):
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
@@ -163,9 +169,7 @@ def add_product_form(gui):
         except ValueError:
             messagebox.showerror("Error", "Cantidad y precio deben ser numéricos.")
             return
-        print(f"[DEBUG] Llamando a create_product con: ({nombre}, {descripcion}, {cantidad}, {unidad}, {precio})")
-        res = create_product((nombre, descripcion, cantidad, unidad, precio))
-        print(f"[DEBUG] Resultado create_product: {res}")
+        create_product((nombre, descripcion, cantidad, unidad, precio))
         messagebox.showinfo("Éxito", "Producto agregado correctamente.")
         form.destroy()
         view_products(gui)
@@ -228,7 +232,6 @@ def edit_product_form(gui):
         cantidad = cantidad_entry.get()
         unidad = unidad_entry.get()
         precio = precio_entry.get().replace('$','').replace(',','').strip()
-        print(f"[DEBUG] Editar producto: id={product_id}, nombre={nombre}, descripcion={descripcion}, cantidad={cantidad}, unidad={unidad}, precio={precio}")
         if not (nombre and cantidad and unidad and precio):
             messagebox.showerror("Error", "Todos los campos son obligatorios.")
             return
@@ -241,9 +244,7 @@ def edit_product_form(gui):
         except ValueError:
             messagebox.showerror("Error", "Cantidad y precio deben ser numéricos.")
             return
-        print(f"[DEBUG] Llamando a update_product con: id={product_id}, ({nombre}, {descripcion}, {cantidad}, {unidad}, {precio})")
         update_product(product_id, (nombre, descripcion, cantidad, unidad, precio))
-        print(f"[DEBUG] Producto actualizado correctamente.")
         messagebox.showinfo("Éxito", "Producto actualizado correctamente.")
         form.destroy()
         view_products(gui)

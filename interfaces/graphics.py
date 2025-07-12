@@ -111,14 +111,21 @@ def list_recipes_cost(parent):
     style.configure("Treeview", background=TABLA_FILA, fieldbackground=TABLA_FILA, foreground=TEXTO, rowheight=28, font=("Segoe UI", 11), borderwidth=0)
     style.configure("Treeview.Heading", background=TABLA_HEADER, foreground=TEXTO, font=("Segoe UI", 12, "bold"), borderwidth=0)
     style.map("Treeview", background=[("selected", TABLA_FILA_ALTERNA)], foreground=[("selected", BOTON_PRINCIPAL)])
-    tree = ttk.Treeview(parent, columns=("ID", "Producto", "Costo Total"), show="headings")
+    tree_frame = tk.Frame(parent, bg=TABLA_FILA)
+    tree_frame.pack(fill='both', expand=True, padx=20, pady=10)
+    tree = ttk.Treeview(tree_frame, columns=("ID", "Producto", "Costo Total"), show="headings")
+    vsb = tk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+    hsb = tk.Scrollbar(tree_frame, orient="horizontal", command=tree.xview)
+    tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+    tree.pack(side="left", fill="both", expand=True)
+    vsb.pack(side="right", fill="y")
+    hsb.pack(side="bottom", fill="x")
     tree.heading("ID", text="ID Receta")
     tree.heading("Producto", text="ID Producto")
     tree.heading("Costo Total", text="Costo Total")
     for r in recipes:
         costo = r[4] if r[4] is not None else 0
         tree.insert("", "end", values=(r[0], r[1], costo))
-    tree.pack(fill='both', expand=True, padx=20, pady=10)
 
 def list_delivered_orders(parent):
     pedidos = read_orders_grouped()
@@ -130,29 +137,30 @@ def list_delivered_orders(parent):
     style.configure("Treeview.Heading", background=TABLA_HEADER, foreground=TEXTO, font=("Segoe UI", 12, "bold"), borderwidth=0)
     style.map("Treeview", background=[("selected", TABLA_FILA_ALTERNA)], foreground=[("selected", BOTON_PRINCIPAL)])
     columns = ("ID Pedido", "Cliente", "Fecha", "Producto", "Cantidad", "Precio Unitario", "Total")
-    tree = ttk.Treeview(parent, columns=columns, show="headings")
+    tree_frame = tk.Frame(parent, bg=TABLA_FILA)
+    tree_frame.pack(fill='both', expand=True, padx=20, pady=10)
+    tree = ttk.Treeview(tree_frame, columns=columns, show="headings")
+    vsb = tk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+    hsb = tk.Scrollbar(tree_frame, orient="horizontal", command=tree.xview)
+    tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+    tree.pack(side="left", fill="both", expand=True)
+    vsb.pack(side="right", fill="y")
+    hsb.pack(side="bottom", fill="x")
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, anchor="center")
     for p in entregados:
         info = p['info']
-        for nombre, cantidad in p['productos']:
-            producto = next((prod for prod in all_products if prod[1] == nombre), None)
-            if producto:
-                precio_unitario = producto[6] if len(producto) > 6 else ''
-                try:
-                    precio_unitario_float = float(precio_unitario)
-                    precio_unitario_str = f"${precio_unitario_float:,.2f}"
-                    total = float(cantidad) * precio_unitario_float
-                    total_str = f"${total:,.2f}"
-                except Exception:
-                    precio_unitario_str = ''
-                    total_str = ''
-            else:
+        for nombre, cantidad, precio_unitario, total in p['productos']:
+            try:
+                precio_unitario_str = f"${float(precio_unitario):,.2f}"
+            except Exception:
                 precio_unitario_str = ''
+            try:
+                total_str = f"${float(total):,.2f}"
+            except Exception:
                 total_str = ''
             tree.insert("", "end", values=(info[0], info[1], info[3], nombre, cantidad, precio_unitario_str, total_str))
-    tree.pack(fill='both', expand=True, padx=20, pady=10)
 
 def exportar_excel():
     ruta = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Guardar reporte de gráficas")

@@ -30,12 +30,12 @@ def create_order_with_products(cliente, estado, fecha, productos):
 
 def read_orders_grouped():
     """
-    Devuelve un diccionario: {pedido_id: {"info": (id, cliente, estado, fecha), "productos": [(nombre, cantidad), ...]}}
+    Devuelve un diccionario: {pedido_id: {"info": (id, cliente, estado, fecha), "productos": [(nombre, cantidad, precio_unitario, total), ...]}}
     """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT p.id, p.cliente, p.estado, p.fecha, pt.nombre, dp.cantidad
+        SELECT p.id, p.cliente, p.estado, p.fecha, pt.nombre, dp.cantidad, pt.precio_venta
         FROM pedidos p
         JOIN detalle_pedido dp ON p.id = dp.pedido_id
         JOIN productos_terminados pt ON dp.producto_id = pt.id_producto
@@ -47,7 +47,14 @@ def read_orders_grouped():
     for row in rows:
         pedido_id = row[0]
         info = row[:4]
-        producto = (row[4], row[5])
+        nombre = row[4]
+        cantidad = row[5]
+        precio_unitario = row[6] if row[6] is not None else 0
+        try:
+            total = float(cantidad) * float(precio_unitario)
+        except Exception:
+            total = 0
+        producto = (nombre, cantidad, precio_unitario, total)
         if pedido_id not in pedidos:
             pedidos[pedido_id] = {"info": info, "productos": []}
         pedidos[pedido_id]["productos"].append(producto)
@@ -58,7 +65,6 @@ def update_order(order_id, updated_order, productos=None):
     updated_order: tupla (cliente, estado, fecha)
     productos: lista de tuplas (producto_id, cantidad) o None
     """
-    print(f"[DEBUG][update_order] order_id: {order_id}, updated_order: {updated_order}")
     conn = get_connection()
     cur = conn.cursor()
     # Si se pasan productos, recalcular valor_total
@@ -76,7 +82,6 @@ def update_order(order_id, updated_order, productos=None):
         cur.execute("UPDATE pedidos SET cliente=?, estado=?, fecha=?, valor_total=? WHERE id=?", (*updated_order, valor_total, order_id))
     else:
         cur.execute("UPDATE pedidos SET cliente=?, estado=?, fecha=? WHERE id=?", (*updated_order, order_id))
-    print(f"[DEBUG][update_order] Ejecutada consulta UPDATE pedidos SET cliente={updated_order[0]}, estado={updated_order[1]}, fecha={updated_order[2]} WHERE id={order_id}")
     conn.commit()
     conn.close()
     # Verificar si el estado es 'Entregado' y registrar en balance

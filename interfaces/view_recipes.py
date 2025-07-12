@@ -55,12 +55,27 @@ def show_recipes_view(gui):
     Label(card, text="Visualiza, crea, edita y elimina recetas del sistema", font=("Segoe UI", 12), fg=TEXTO, bg=TABLA_FILA).pack(anchor="w", padx=24, pady=(0, 18))
     # Botones alineados
     frame_botones = Frame(card, bg=TABLA_FILA)
-    frame_botones.pack(pady=10, padx=24, anchor="w")
+    frame_botones.pack(pady=10, padx=24, anchor="w", fill="x")
     Button = gui.styled_button
     Button(frame_botones, "Agregar Receta", lambda: add_recipe_form(gui), bg=BOTON_PRINCIPAL, fg="white", image=gui.action_images[0], compound="left").pack(side="left", padx=5)
     Button(frame_botones, "Editar Receta", lambda: edit_recipe_form(gui), bg=BOTON_PRINCIPAL, fg="white", image=gui.action_images[1], compound="left").pack(side="left", padx=5)
     Button(frame_botones, "Eliminar Receta", lambda: delete_recipe_form(gui), bg=BOTON_PRINCIPAL, fg="white", image=gui.action_images[2], compound="left").pack(side="left", padx=5)
-    Button(frame_botones, "Exportar a Excel", lambda: exportar_excel(gui), bg=BOTON_PRINCIPAL, fg="white", image=gui.excel_icon, compound="left").pack(anchor="e", padx=24, pady=8)
+    Button(frame_botones, "Exportar a Excel", lambda: exportar_excel(gui), bg=BOTON_PRINCIPAL, fg="white", image=gui.excel_icon, compound="left").pack(side="left", padx=5)
+    def crear_producto_desde_receta():
+        selected = gui.recipes_table.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Seleccione una receta para producir el producto.")
+            return
+        recipe_id = gui.recipes_table.item(selected[0])["values"][0]
+        cantidad = askinteger("Cantidad a producir", "¿Cuántas unidades desea producir?", minvalue=1)
+        if cantidad is None:
+            return
+        ok, msg = produce_product_from_recipe(recipe_id, cantidad)
+        if ok:
+            messagebox.showinfo("Éxito", msg)
+        else:
+            messagebox.showerror("Error", msg)
+    Button(frame_botones, "Crear Producto", crear_producto_desde_receta, bg=BOTON_PRINCIPAL, fg="white").pack(side="right", padx=5)
     # Tabla de recetas
     style = ttk.Style()
     style.theme_use("clam")
@@ -68,28 +83,31 @@ def show_recipes_view(gui):
     style.configure("Treeview.Heading", background=TABLA_HEADER, foreground=TEXTO, font=("Segoe UI", 12, "bold"), borderwidth=0)
     style.map("Treeview", background=[("selected", TABLA_FILA_ALTERNA)], foreground=[("selected", BOTON_PRINCIPAL)])
     columns = ("ID", "Producto ID", "Versión", "Fecha", "Costo Total")
-    gui.recipes_table = ttk.Treeview(card, columns=columns, show="headings")
-    gui._recipes_sort_state = {col: False for col in columns}
-    def sort_recipes_table(col):
-        data = [(gui.recipes_table.set(k, col), k) for k in gui.recipes_table.get_children("")]
-        try:
-            data = [(float(v.replace('$','').replace(',','')) if v.replace('$','').replace(',','').replace('.','',1).isdigit() else v, k) for v, k in data]
-        except Exception:
-            pass
-        data.sort(reverse=gui._recipes_sort_state[col])
-        for index, (val, k) in enumerate(data):
-            gui.recipes_table.move(k, '', index)
-        gui._recipes_sort_state[col] = not gui._recipes_sort_state[col]
+    frame_tabla = Frame(card, bg=TABLA_FILA)
+    frame_tabla.pack(fill="both", expand=True, padx=24, pady=10)
+    gui.recipes_table = ttk.Treeview(frame_tabla, columns=columns, show="headings")
+    vsb = tk.Scrollbar(frame_tabla, orient="vertical", command=gui.recipes_table.yview)
+    hsb = tk.Scrollbar(frame_tabla, orient="horizontal", command=gui.recipes_table.xview)
+    gui.recipes_table.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+    gui.recipes_table.pack(side="left", fill="both", expand=True, anchor="n")
+    vsb.pack(side="right", fill="y")
+    hsb.pack(side="bottom", fill="x")
     for col in columns:
-        gui.recipes_table.heading(col, text=col, command=lambda c=col: sort_recipes_table(c))
-        gui.recipes_table.column(col, anchor="center")
-    gui.recipes_table.pack(fill="both", expand=True, padx=24, pady=10)
+        gui.recipes_table.heading(col, text=col)
+        gui.recipes_table.column(col, anchor="center", stretch=True, width=150)
     # Tabla de materiales de la receta
-    gui.recipe_materials_table = ttk.Treeview(card, columns=("ID Material", "Nombre", "Cantidad", "Costo Parcial"), show="headings")
+    frame_tabla2 = Frame(card, bg=TABLA_FILA)
+    frame_tabla2.pack(fill="both", expand=True, padx=24, pady=10)
+    gui.recipe_materials_table = ttk.Treeview(frame_tabla2, columns=("ID Material", "Nombre", "Cantidad", "Costo Parcial"), show="headings")
+    vsb2 = tk.Scrollbar(frame_tabla2, orient="vertical", command=gui.recipe_materials_table.yview)
+    hsb2 = tk.Scrollbar(frame_tabla2, orient="horizontal", command=gui.recipe_materials_table.xview)
+    gui.recipe_materials_table.configure(yscrollcommand=vsb2.set, xscrollcommand=hsb2.set)
+    gui.recipe_materials_table.pack(side="left", fill="both", expand=True, anchor="n")
+    vsb2.pack(side="right", fill="y")
+    hsb2.pack(side="bottom", fill="x")
     for col in ("ID Material", "Nombre", "Cantidad", "Costo Parcial"):
         gui.recipe_materials_table.heading(col, text=col)
-        gui.recipe_materials_table.column(col, anchor="center")
-    gui.recipe_materials_table.pack(fill="both", expand=True, padx=24, pady=10)
+        gui.recipe_materials_table.column(col, anchor="center", stretch=True, width=150)
     gui.recipes_table.bind("<<TreeviewSelect>>", lambda event: on_recipe_select(gui, event))
     view_recipes(gui)
 

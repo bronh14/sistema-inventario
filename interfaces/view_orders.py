@@ -63,29 +63,31 @@ def show_orders_view(gui):
     style.configure("Treeview.Heading", background=TABLA_HEADER, foreground=TEXTO, font=("Segoe UI", 12, "bold"), borderwidth=0)
     style.map("Treeview", background=[("selected", TABLA_FILA_ALTERNA)], foreground=[("selected", BOTON_PRINCIPAL)])
     columns = ("ID", "Cliente", "Estado", "Fecha")
-    gui.orders_table = ttk.Treeview(card, columns=columns, show="headings")
-    gui._orders_sort_state = {col: False for col in columns}
-    def sort_orders_table(col):
-        data = [(gui.orders_table.set(k, col), k) for k in gui.orders_table.get_children("")]
-        try:
-            data = [(float(v.replace('$','').replace(',','')) if v.replace('$','').replace(',','').replace('.','',1).isdigit() else v, k) for v, k in data]
-            data.sort(reverse=gui._orders_sort_state[col])
-        except Exception:
-            data = [(str(v), k) for v, k in data]
-            data.sort(reverse=gui._orders_sort_state[col])
-        for index, (val, k) in enumerate(data):
-            gui.orders_table.move(k, '', index)
-        gui._orders_sort_state[col] = not gui._orders_sort_state[col]
+    frame_tabla = Frame(card, bg=TABLA_FILA)
+    frame_tabla.pack(fill="both", expand=True, padx=24, pady=10)
+    gui.orders_table = ttk.Treeview(frame_tabla, columns=columns, show="headings")
+    vsb = tk.Scrollbar(frame_tabla, orient="vertical", command=gui.orders_table.yview)
+    hsb = tk.Scrollbar(frame_tabla, orient="horizontal", command=gui.orders_table.xview)
+    gui.orders_table.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+    gui.orders_table.pack(side="left", fill="both", expand=True, anchor="n")
+    vsb.pack(side="right", fill="y")
+    hsb.pack(side="bottom", fill="x")
     for col in columns:
-        gui.orders_table.heading(col, text=col, command=lambda c=col: sort_orders_table(c))
-        gui.orders_table.column(col, anchor="center")
-    gui.orders_table.pack(fill="both", expand=True, padx=24, pady=10)
+        gui.orders_table.heading(col, text=col)
+        gui.orders_table.column(col, anchor="center", stretch=True, width=150)
     # Subtabla de productos del pedido seleccionado
-    gui.order_products_table = ttk.Treeview(card, columns=("Nombre", "Cantidad", "Precio Unitario", "Total"), show="headings")
+    frame_tabla2 = Frame(card, bg=TABLA_FILA)
+    frame_tabla2.pack(fill="both", expand=True, padx=24, pady=10)
+    gui.order_products_table = ttk.Treeview(frame_tabla2, columns=("Nombre", "Cantidad", "Precio Unitario", "Total"), show="headings")
+    vsb2 = tk.Scrollbar(frame_tabla2, orient="vertical", command=gui.order_products_table.yview)
+    hsb2 = tk.Scrollbar(frame_tabla2, orient="horizontal", command=gui.order_products_table.xview)
+    gui.order_products_table.configure(yscrollcommand=vsb2.set, xscrollcommand=hsb2.set)
+    gui.order_products_table.pack(side="left", fill="both", expand=True, anchor="n")
+    vsb2.pack(side="right", fill="y")
+    hsb2.pack(side="bottom", fill="x")
     for col in ("Nombre", "Cantidad", "Precio Unitario", "Total"):
         gui.order_products_table.heading(col, text=col)
-        gui.order_products_table.column(col, anchor="center")
-    gui.order_products_table.pack(fill="both", expand=True, padx=24, pady=10)
+        gui.order_products_table.column(col, anchor="center", stretch=True, width=150)
     gui.orders_table.bind("<<TreeviewSelect>>", lambda event: on_order_select(gui, event))
     view_orders(gui)
 
@@ -100,12 +102,8 @@ def view_orders(gui):
         estado = info[2]
         badge = f"[{estado}]" if estado else ""
         parent = gui.orders_table.insert("", "end", values=(info[0], info[1], badge, info[3]))
-        for nombre, cantidad in productos:
-            # Si el nombre contiene precio, formatear
-            if isinstance(nombre, str) and "$" in nombre:
-                gui.orders_table.insert(parent, "end", values=("", nombre, f"Cantidad: {cantidad}", ""))
-            else:
-                gui.orders_table.insert(parent, "end", values=("", f"Producto: {nombre}", f"Cantidad: {cantidad}", ""))
+        for nombre, cantidad, precio_unitario, total in productos:
+            gui.orders_table.insert(parent, "end", values=("", f"Producto: {nombre}", f"Cantidad: {cantidad}", ""))
 
 def on_order_select(gui, event):
     selected = gui.orders_table.selection()
@@ -116,27 +114,16 @@ def on_order_select(gui, event):
     if pedido_id not in pedidos:
         return
     productos = pedidos[pedido_id]["productos"]
-    from crud.products_crud import read_all_products
-    productos_db = {str(p[0]): p for p in read_all_products()}
     for row in gui.order_products_table.get_children():
         gui.order_products_table.delete(row)
-    for nombre, cantidad in productos:
-        # Buscar precio de venta (NO costo de producción)
-        producto = next((p for p in productos_db.values() if p[1] == nombre), None)
-        if producto:
-            # El precio de venta está en la columna 6 (índice 5 o 6 según estructura)
-            # Estructura: id_producto, nombre, descripcion, cantidad_stock, unidad_medida, precio_venta, costo_produccion
-            precio_venta = producto[5] if len(producto) > 5 else ''
-            try:
-                precio_venta_float = float(precio_venta)
-                precio_venta_str = f"${precio_venta_float:,.2f}"
-                total = float(cantidad) * precio_venta_float
-                total_str = f"${total:,.2f}"
-            except Exception:
-                precio_venta_str = ''
-                total_str = ''
-        else:
+    for nombre, cantidad, precio_unitario, total in productos:
+        try:
+            precio_venta_str = f"${float(precio_unitario):,.2f}"
+        except Exception:
             precio_venta_str = ''
+        try:
+            total_str = f"${float(total):,.2f}"
+        except Exception:
             total_str = ''
         gui.order_products_table.insert("", "end", values=(nombre, cantidad, precio_venta_str, total_str))
 
@@ -288,9 +275,7 @@ def exportar_excel():
     pedidos_list = []
     for pid, data in pedidos.items():
         info = data["info"]
-        for prod, cant in data["productos"]:
-            pedidos_list.append([info[0], info[1], info[2], info[3], prod, cant])
-        df_pedidos = pd.DataFrame(pedidos_list, columns=pd.Index(["ID Pedido", "Cliente", "Estado", "Fecha", "Producto", "Cantidad"]))
-        # Formatear valores monetarios en el DataFrame de pedidos si hay columna de precio o valor total
-        # (Agregar aquí si se agregan columnas de precio/valor en el futuro)
-        df_pedidos.to_excel(ruta, index=False)
+        for prod, cant, precio_unitario, total in data["productos"]:
+            pedidos_list.append([info[0], info[1], info[2], info[3], prod, cant, precio_unitario, total])
+    df_pedidos = pd.DataFrame(pedidos_list, columns=pd.Index(["ID Pedido", "Cliente", "Estado", "Fecha", "Producto", "Cantidad", "Precio Unitario", "Total"]))
+    df_pedidos.to_excel(ruta, index=False)

@@ -52,7 +52,15 @@ def show_materials_view(gui):
     style.configure("Treeview.Heading", background=TABLA_HEADER, foreground=TEXTO, font=("Segoe UI", 12, "bold"), borderwidth=0)
     style.map("Treeview", background=[("selected", TABLA_FILA_ALTERNA)], foreground=[("selected", BOTON_PRINCIPAL)])
     columns = ("ID", "Nombre", "Descripción", "Cantidad", "Unidad", "Costo", "Proveedor", "Alerta")
-    gui.materials_table = ttk.Treeview(card, columns=columns, show="headings")
+    frame_tabla = Frame(card, bg=TABLA_FILA)
+    frame_tabla.pack(fill="both", expand=True, padx=24, pady=10)
+    gui.materials_table = ttk.Treeview(frame_tabla, columns=columns, show="headings")
+    vsb = tk.Scrollbar(frame_tabla, orient="vertical", command=gui.materials_table.yview)
+    hsb = tk.Scrollbar(frame_tabla, orient="horizontal", command=gui.materials_table.xview)
+    gui.materials_table.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+    gui.materials_table.pack(side="left", fill="both", expand=True)
+    vsb.pack(side="right", fill="y")
+    hsb.pack(side="bottom", fill="x")
     gui._materials_sort_state = {col: False for col in columns}
     def sort_materials_table(col):
         data = [(gui.materials_table.set(k, col), k) for k in gui.materials_table.get_children("")]
@@ -67,7 +75,6 @@ def show_materials_view(gui):
     for col in columns:
         gui.materials_table.heading(col, text=col, command=lambda c=col: sort_materials_table(c))
         gui.materials_table.column(col, anchor="center")
-    gui.materials_table.pack(fill="both", expand=True, padx=24, pady=10)
     view_materials(gui)
 
 def view_materials(gui):
