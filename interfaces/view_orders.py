@@ -121,22 +121,24 @@ def on_order_select(gui, event):
     for row in gui.order_products_table.get_children():
         gui.order_products_table.delete(row)
     for nombre, cantidad in productos:
-        # Buscar precio unitario
+        # Buscar precio de venta (NO costo de producción)
         producto = next((p for p in productos_db.values() if p[1] == nombre), None)
         if producto:
-            precio_unitario = producto[6] if len(producto) > 6 else ''
+            # El precio de venta está en la columna 6 (índice 5 o 6 según estructura)
+            # Estructura: id_producto, nombre, descripcion, cantidad_stock, unidad_medida, precio_venta, costo_produccion
+            precio_venta = producto[5] if len(producto) > 5 else ''
             try:
-                precio_unitario_float = float(precio_unitario)
-                precio_unitario_str = f"${precio_unitario_float:,.2f}"
-                total = float(cantidad) * precio_unitario_float
+                precio_venta_float = float(precio_venta)
+                precio_venta_str = f"${precio_venta_float:,.2f}"
+                total = float(cantidad) * precio_venta_float
                 total_str = f"${total:,.2f}"
             except Exception:
-                precio_unitario_str = ''
+                precio_venta_str = ''
                 total_str = ''
         else:
-            precio_unitario_str = ''
+            precio_venta_str = ''
             total_str = ''
-        gui.order_products_table.insert("", "end", values=(nombre, cantidad, precio_unitario_str, total_str))
+        gui.order_products_table.insert("", "end", values=(nombre, cantidad, precio_venta_str, total_str))
 
 def add_order_form(gui):
     productos_seleccionados = []
