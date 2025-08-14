@@ -86,6 +86,7 @@ def initialize_database():
         cliente TEXT,
         estado TEXT,
         fecha TEXT,
+        fecha_entrega TEXT,
         valor_total REAL
     );
     """)
@@ -129,6 +130,16 @@ def initialize_database():
         columns = [col[1] for col in cursor.fetchall()]
         if 'costo_produccion' not in columns:
             cursor.execute("ALTER TABLE productos_terminados ADD COLUMN costo_produccion REAL;")
+    except sqlite3.OperationalError:
+        # La tabla no existe, no hay problema
+        pass
+
+    # Verificar si la columna fecha_entrega existe en pedidos
+    try:
+        cursor.execute("PRAGMA table_info(pedidos)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'fecha_entrega' not in columns:
+            cursor.execute("ALTER TABLE pedidos ADD COLUMN fecha_entrega TEXT;")
     except sqlite3.OperationalError:
         # La tabla no existe, no hay problema
         pass

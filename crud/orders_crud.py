@@ -2,10 +2,11 @@ from database.database import get_connection
 from crud.products_crud import read_product
 
 
-def create_order_with_products(cliente, estado, fecha, productos):
+def create_order_with_products(cliente, estado, fecha, productos, fecha_entrega=None):
     """
     Crea un pedido y asocia varios productos.
     productos: lista de tuplas (producto_id, cantidad)
+    fecha_entrega: fecha de entrega del pedido (opcional)
     """
     conn = get_connection()
     cur = conn.cursor()
@@ -20,7 +21,7 @@ def create_order_with_products(cliente, estado, fecha, productos):
             # Si el producto no existe o no tiene precio, usar 0
             precio_venta = 0
         valor_total += precio_venta * cantidad
-    cur.execute("INSERT INTO pedidos (cliente, estado, fecha, valor_total) VALUES (?, ?, ?, ?)", (cliente, estado, fecha, valor_total))
+    cur.execute("INSERT INTO pedidos (cliente, estado, fecha, fecha_entrega, valor_total) VALUES (?, ?, ?, ?, ?)", (cliente, estado, fecha, fecha_entrega, valor_total))
     pedido_id = cur.lastrowid
     detalle = [(pedido_id, prod_id, cantidad) for prod_id, cantidad in productos]
     cur.executemany("INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad) VALUES (?, ?, ?)", detalle)
@@ -30,12 +31,12 @@ def create_order_with_products(cliente, estado, fecha, productos):
 
 def read_orders_grouped():
     """
-    Devuelve un diccionario: {pedido_id: {"info": (id, cliente, estado, fecha), "productos": [(nombre, cantidad, precio_unitario, total), ...]}}
+    Devuelve un diccionario: {pedido_id: {"info": (id, cliente, estado, fecha, fecha_entrega), "productos": [(nombre, cantidad, precio_unitario, total), ...]}}
     """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT p.id, p.cliente, p.estado, p.fecha, pt.nombre, dp.cantidad, pt.precio_venta
+        SELECT p.id, p.cliente, p.estado, p.fecha, p.fecha_entrega, pt.nombre, dp.cantidad, pt.precio_venta
         FROM pedidos p
         JOIN detalle_pedido dp ON p.id = dp.pedido_id
         JOIN productos_terminados pt ON dp.producto_id = pt.id_producto
@@ -46,10 +47,10 @@ def read_orders_grouped():
     pedidos = {}
     for row in rows:
         pedido_id = row[0]
-        info = row[:4]
-        nombre = row[4]
-        cantidad = row[5]
-        precio_unitario = row[6] if row[6] is not None else 0
+        info = row[:5]  # Ahora incluye fecha_entrega
+        nombre = row[5]
+        cantidad = row[6]
+        precio_unitario = row[7] if row[7] is not None else 0
         try:
             total = float(cantidad) * float(precio_unitario)
         except Exception:
@@ -62,7 +63,7 @@ def read_orders_grouped():
 
 def update_order(order_id, updated_order, productos=None):
     """
-    updated_order: tupla (cliente, estado, fecha)
+    updated_order: tupla (cliente, estado, fecha, fecha_entrega)
     productos: lista de tuplas (producto_id, cantidad) o None
     """
     conn = get_connection()
@@ -79,9 +80,9 @@ def update_order(order_id, updated_order, productos=None):
                 # Si el producto no existe o no tiene precio, usar 0
                 precio_venta = 0
             valor_total += precio_venta * cantidad
-        cur.execute("UPDATE pedidos SET cliente=?, estado=?, fecha=?, valor_total=? WHERE id=?", (*updated_order, valor_total, order_id))
+        cur.execute("UPDATE pedidos SET cliente=?, estado=?, fecha=?, fecha_entrega=?, valor_total=? WHERE id=?", (*updated_order, valor_total, order_id))
     else:
-        cur.execute("UPDATE pedidos SET cliente=?, estado=?, fecha=? WHERE id=?", (*updated_order, order_id))
+        cur.execute("UPDATE pedidos SET cliente=?, estado=?, fecha=?, fecha_entrega=? WHERE id=?", (*updated_order, order_id))
     conn.commit()
     conn.close()
     # Verificar si el estado es 'Entregado' y registrar en balance

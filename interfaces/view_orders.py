@@ -8,10 +8,54 @@ import tkinter as tk
 import pandas as pd
 import os
 from tkinter import filedialog
+try:
+    from tkcalendar import DateEntry
+except ImportError:
+    # Fallback si tkcalendar no está disponible
+    DateEntry = None
 
 def get_products_list():
     products = read_all_products()
     return [(str(p[0]), p[1]) for p in products]
+
+def create_date_entry(parent, font, bg_color, fg_color, border_color, default_date=None):
+    """
+    Crea un campo de fecha con calendario desplegable.
+    Si tkcalendar no está disponible, crea un Entry normal.
+    """
+    if DateEntry is not None:
+        # Usar DateEntry con calendario
+        date_entry = DateEntry(
+            parent,
+            width=20,
+            background=bg_color,
+            foreground=fg_color,
+            borderwidth=1,
+            highlightbackground=border_color,
+            highlightthickness=1,
+            font=font,
+            date_pattern='yyyy-mm-dd',
+            locale='es_ES' if hasattr(DateEntry, 'locale') else None
+        )
+        if default_date:
+            try:
+                # Convertir string a fecha si es necesario
+                if isinstance(default_date, str):
+                    if default_date != "YYYY-MM-DD":
+                        date_entry.set_date(default_date)
+            except:
+                pass
+        return date_entry
+    else:
+        # Fallback: Entry normal
+        date_entry = Entry(parent, font=font, bg=bg_color, fg=fg_color, 
+                          relief="flat", bd=2, highlightbackground=border_color, 
+                          highlightthickness=1)
+        if default_date:
+            date_entry.insert(0, default_date)
+        else:
+            date_entry.insert(0, "YYYY-MM-DD")
+        return date_entry
 
 ESTADOS_PEDIDO = [
     "Pendiente",
@@ -62,7 +106,7 @@ def show_orders_view(gui):
     style.configure("Treeview", background=TABLA_FILA, fieldbackground=TABLA_FILA, foreground=TEXTO, rowheight=28, font=("Segoe UI", 11), borderwidth=0)
     style.configure("Treeview.Heading", background=TABLA_HEADER, foreground=TEXTO, font=("Segoe UI", 12, "bold"), borderwidth=0)
     style.map("Treeview", background=[("selected", TABLA_FILA_ALTERNA)], foreground=[("selected", BOTON_PRINCIPAL)])
-    columns = ("ID", "Cliente", "Estado", "Fecha")
+    columns = ("ID", "Cliente", "Estado", "Fecha", "Fecha Entrega")
     frame_tabla = Frame(card, bg=TABLA_FILA)
     frame_tabla.pack(fill="both", expand=True, padx=24, pady=10)
     gui.orders_table = ttk.Treeview(frame_tabla, columns=columns, show="headings")
@@ -101,9 +145,10 @@ def view_orders(gui):
         # Badge de estado
         estado = info[2]
         badge = f"[{estado}]" if estado else ""
-        parent = gui.orders_table.insert("", "end", values=(info[0], info[1], badge, info[3]))
+        fecha_entrega = info[4] if info[4] else ""
+        parent = gui.orders_table.insert("", "end", values=(info[0], info[1], badge, info[3], fecha_entrega))
         for nombre, cantidad, precio_unitario, total in productos:
-            gui.orders_table.insert(parent, "end", values=("", f"Producto: {nombre}", f"Cantidad: {cantidad}", ""))
+            gui.orders_table.insert(parent, "end", values=("", f"Producto: {nombre}", f"Cantidad: {cantidad}", "", ""))
 
 def on_order_select(gui, event):
     selected = gui.orders_table.selection()
@@ -159,20 +204,25 @@ def add_order_form(gui):
     gui.styled_label(scroll_frame, "Fecha", size=13, fg=BOTON_PRINCIPAL, bg=TABLA_FILA, pady=2).grid(row=2, column=0, sticky="w", padx=18, pady=8)
     fecha_label = Label(scroll_frame, text=fecha, bg=TABLA_FILA, fg=BOTON_PRINCIPAL, font=gui.font)
     fecha_label.grid(row=2, column=1, padx=10, pady=8)
-    gui.styled_label(scroll_frame, "Producto", size=13, fg=BOTON_PRINCIPAL, bg=TABLA_FILA, pady=2).grid(row=3, column=0, sticky="w", padx=18, pady=8)
+    
+    gui.styled_label(scroll_frame, "Fecha de Entrega", size=13, fg=BOTON_PRINCIPAL, bg=TABLA_FILA, pady=2).grid(row=3, column=0, sticky="w", padx=18, pady=8)
+    fecha_entrega_entry = create_date_entry(scroll_frame, gui.font, FONDO_CLARO, TEXTO, BORDER)
+    fecha_entrega_entry.grid(row=3, column=1, padx=10, pady=8)
+    
+    gui.styled_label(scroll_frame, "Producto", size=13, fg=BOTON_PRINCIPAL, bg=TABLA_FILA, pady=2).grid(row=4, column=0, sticky="w", padx=18, pady=8)
     productos = get_products_list()
     producto_var = StringVar()
     producto_combo = ttk.Combobox(scroll_frame, textvariable=producto_var, state="readonly", values=[f"{pid} - {name}" for pid, name in productos], font=gui.font)
-    producto_combo.grid(row=3, column=1, padx=10, pady=8)
+    producto_combo.grid(row=4, column=1, padx=10, pady=8)
     if productos:
         producto_combo.current(0)
-    gui.styled_label(scroll_frame, "Cantidad", size=13, fg=BOTON_PRINCIPAL, bg=TABLA_FILA, pady=2).grid(row=4, column=0, sticky="w", padx=18, pady=8)
+    gui.styled_label(scroll_frame, "Cantidad", size=13, fg=BOTON_PRINCIPAL, bg=TABLA_FILA, pady=2).grid(row=5, column=0, sticky="w", padx=18, pady=8)
     cantidad_entry = Entry(scroll_frame, font=gui.font, bg=FONDO_CLARO, fg=TEXTO, relief="flat", bd=2, highlightbackground=BORDER, highlightthickness=1)
-    cantidad_entry.grid(row=4, column=1, padx=10, pady=8)
+    cantidad_entry.grid(row=5, column=1, padx=10, pady=8)
     productos_listbox = ttk.Treeview(scroll_frame, columns=("Producto", "Cantidad"), show="headings", height=5)
     productos_listbox.heading("Producto", text="Producto")
     productos_listbox.heading("Cantidad", text="Cantidad")
-    productos_listbox.grid(row=5, column=0, columnspan=2, pady=8, padx=18)
+    productos_listbox.grid(row=6, column=0, columnspan=2, pady=8, padx=18)
     def agregar_producto():
         prod_index = producto_combo.current()
         cantidad = cantidad_entry.get()
@@ -189,19 +239,31 @@ def add_order_form(gui):
         productos_seleccionados.append((producto_id, cantidad))
         productos_listbox.insert("", "end", values=(producto_nombre, cantidad))
         cantidad_entry.delete(0, "end")
-    gui.styled_button(scroll_frame, "Agregar Producto", agregar_producto, bg=BOTON_PRINCIPAL, fg="white").grid(row=6, column=0, columnspan=2, pady=4)
+    gui.styled_button(scroll_frame, "Agregar Producto", agregar_producto, bg=BOTON_PRINCIPAL, fg="white").grid(row=7, column=0, columnspan=2, pady=4)
     def guardar_pedido():
         cliente = cliente_entry.get()
         estado = estado_var.get().strip()
         estado = next((e for e in ESTADOS_PEDIDO if e.lower().strip() == estado.lower().strip()), estado)
+        
+        # Obtener fecha de entrega del calendario
+        if DateEntry is not None and hasattr(fecha_entrega_entry, 'get_date'):
+            try:
+                fecha_entrega = fecha_entrega_entry.get_date().strftime("%Y-%m-%d")
+            except:
+                fecha_entrega = None
+        else:
+            fecha_entrega = fecha_entrega_entry.get().strip()
+            if fecha_entrega == "YYYY-MM-DD":
+                fecha_entrega = None
+        
         if not cliente or not productos_seleccionados or not estado:
             messagebox.showerror("Error", "Debe ingresar cliente, estado y al menos un producto.")
             return
-        create_order_with_products(cliente, estado, fecha, productos_seleccionados)
+        create_order_with_products(cliente, estado, fecha, productos_seleccionados, fecha_entrega)
         messagebox.showinfo("Éxito", "Pedido creado correctamente.")
         form.destroy()
         view_orders(gui)
-    gui.styled_button(scroll_frame, "Guardar Pedido", guardar_pedido, bg=BOTON_PRINCIPAL, fg="white").grid(row=7, column=0, columnspan=2, pady=12)
+    gui.styled_button(scroll_frame, "Guardar Pedido", guardar_pedido, bg=BOTON_PRINCIPAL, fg="white").grid(row=8, column=0, columnspan=2, pady=12)
 
 
 def edit_order_form(gui):
@@ -232,23 +294,39 @@ def edit_order_form(gui):
     estado_match = next((e for e in ESTADOS_PEDIDO if e.lower().strip() == estado_actual.lower()), ESTADOS_PEDIDO[0])
     estado_var.set(estado_match)
     fecha = order_values[3]
+    fecha_entrega = order_values[4] if len(order_values) > 4 else ""
     gui.styled_label(form, "Fecha", size=13, fg=BOTON_PRINCIPAL, bg=TABLA_FILA, pady=2).grid(row=2, column=0, sticky="w", padx=18, pady=8)
     fecha_label = Label(form, text=fecha, bg=TABLA_FILA, fg=BOTON_PRINCIPAL, font=gui.font)
     fecha_label.grid(row=2, column=1, padx=10, pady=8)
+    
+    gui.styled_label(form, "Fecha de Entrega", size=13, fg=BOTON_PRINCIPAL, bg=TABLA_FILA, pady=2).grid(row=3, column=0, sticky="w", padx=18, pady=8)
+    fecha_entrega_entry = create_date_entry(form, gui.font, FONDO_CLARO, TEXTO, BORDER, fecha_entrega)
+    fecha_entrega_entry.grid(row=3, column=1, padx=10, pady=8)
+    
     def save_edit_order():
         form.focus()
         form.update_idletasks()
         cliente = cliente_entry.get()
         estado = estado_var.get().strip()
         estado = next((e for e in ESTADOS_PEDIDO if e.lower().strip() == estado.lower().strip()), estado)
+        
+        # Obtener fecha de entrega del calendario
+        if DateEntry is not None and hasattr(fecha_entrega_entry, 'get_date'):
+            try:
+                fecha_entrega = fecha_entrega_entry.get_date().strftime("%Y-%m-%d")
+            except:
+                fecha_entrega = ""
+        else:
+            fecha_entrega = fecha_entrega_entry.get().strip()
+        
         if not (cliente and estado):
             messagebox.showwarning("Advertencia", "Todos los campos son obligatorios")
             return
-        update_order(order_id, (cliente, estado, fecha))
+        update_order(order_id, (cliente, estado, fecha, fecha_entrega))
         messagebox.showinfo("Éxito", "Pedido actualizado correctamente")
         form.destroy()
         view_orders(gui)
-    gui.styled_button(form, "Guardar Cambios", save_edit_order, bg=BOTON_PRINCIPAL, fg="white").grid(row=3, column=0, columnspan=2, pady=12)
+    gui.styled_button(form, "Guardar Cambios", save_edit_order, bg=BOTON_PRINCIPAL, fg="white").grid(row=4, column=0, columnspan=2, pady=12)
 
 def delete_order_form(gui):
     selected = gui.orders_table.selection()
@@ -276,6 +354,6 @@ def exportar_excel():
     for pid, data in pedidos.items():
         info = data["info"]
         for prod, cant, precio_unitario, total in data["productos"]:
-            pedidos_list.append([info[0], info[1], info[2], info[3], prod, cant, precio_unitario, total])
-    df_pedidos = pd.DataFrame(pedidos_list, columns=pd.Index(["ID Pedido", "Cliente", "Estado", "Fecha", "Producto", "Cantidad", "Precio Unitario", "Total"]))
+            pedidos_list.append([info[0], info[1], info[2], info[3], info[4] if len(info) > 4 else "", prod, cant, precio_unitario, total])
+    df_pedidos = pd.DataFrame(pedidos_list, columns=pd.Index(["ID Pedido", "Cliente", "Estado", "Fecha", "Fecha Entrega", "Producto", "Cantidad", "Precio Unitario", "Total"]))
     df_pedidos.to_excel(ruta, index=False)

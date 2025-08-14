@@ -22,6 +22,7 @@ curl -L https://raw.githubusercontent.com/Bronh14/sistema-inventario/main/instal
 - **[Guía Completa](docs/README.md)** - Documentación completa del proyecto
 - **[Instrucciones de Instalación](docs/INSTRUCCIONES_INSTALACION.md)** - Guía detallada de instalación
 - **[Guía de Distribución](docs/COMO_DISTRIBUIR.md)** - Cómo distribuir el sistema
+- **[Calendarios de Pedidos](docs/CALENDARIOS_PEDIDOS.md)** - Uso de calendarios desplegables
 
 ## 🛠️ Instaladores
 
@@ -42,7 +43,7 @@ curl -L https://raw.githubusercontent.com/Bronh14/sistema-inventario/main/instal
 - **Gestión de Materiales**: Control de stock, costos y proveedores
 - **Gestión de Productos**: Productos terminados con precios de venta
 - **Recetas de Producción**: Definición de recetas con materiales y costos
-- **Gestión de Pedidos**: Creación y seguimiento de pedidos de clientes
+- **Gestión de Pedidos**: Creación y seguimiento de pedidos de clientes con calendarios desplegables
 - **Dashboard**: Vista general del sistema con estadísticas
 - **Gráficas y Reportes**: Visualización de datos con matplotlib
 - **Exportación a Excel**: Generación de reportes en formato Excel
